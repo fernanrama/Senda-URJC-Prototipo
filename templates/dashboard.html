@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Senda URJC - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-body">
+    <header class="topbar">
+        <div>
+            <h1>Menú Principal - Senda URJC</h1>
+            <p>Usuario: {{ user.nombre }} | Correo: {{ user.correo }} | Rol: {{ user.rol }}</p>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <section class="cards-grid">
+            <article class="feature-card">
+                <h2>Modo Voy Contigo</h2>
+                <p>RF24: Acompañamiento y navegación segura en trayectos.</p>
+                <a class="btn btn-outline" href="{{ url_for('voy_contigo') }}">Entrar</a>
+            </article>
+
+            <article class="feature-card">
+                <h2>Reportar Incidencia</h2>
+                <p>RF15: Registro y seguimiento de incidencias en el entorno universitario.</p>
+                <a class="btn btn-outline" href="{{ url_for('reportar_incidencia') }}">Reportar</a>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

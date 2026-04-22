@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Senda URJC - Reportar Incidencia</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .report-layout {
+            max-width: 1040px;
+            margin: 24px auto;
+            padding: 0 20px 30px;
+        }
+
+        .report-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 22px;
+            margin-bottom: 20px;
+        }
+
+        .report-form {
+            display: grid;
+            gap: 10px;
+        }
+
+        select,
+        textarea {
+            border: 1px solid #d5deea;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 1rem;
+            outline: none;
+            font-family: inherit;
+            width: 100%;
+        }
+
+        select:focus,
+        textarea:focus {
+            border-color: #0055a4;
+            box-shadow: 0 0 0 3px rgba(0, 85, 164, 0.15);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e8edf4;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f5f8fd;
+        }
+
+        .empty-state {
+            color: #5b6775;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+    <main class="report-layout">
+        <section class="report-card">
+            <h1>Reportar Incidencia</h1>
+            <p>Usuario: {{ user.nombre }} | Correo: {{ user.correo }}</p>
+
+            {% if error %}
+                <div class="alert alert-error">{{ error }}</div>
+            {% endif %}
+
+            <form method="post" class="report-form" action="{{ url_for('reportar_incidencia') }}">
+                <label for="tipo">Tipo de Incidencia</label>
+                <select id="tipo" name="tipo" required>
+                    <option value="" disabled selected>Selecciona una opción</option>
+                    {% for tipo in tipos_incidencia %}
+                        <option value="{{ tipo }}">{{ tipo }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="descripcion">Descripción</label>
+                <textarea id="descripcion" name="descripcion" placeholder="Describe lo ocurrido" required></textarea>
+
+                <button type="submit" class="btn btn-primary">Enviar Reporte</button>
+            </form>
+        </section>
+
+        <section class="report-card">
+            <h2>Incidencias Reportadas</h2>
+
+            {% if incidencias %}
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for incidencia in incidencias|reverse %}
+                                <tr>
+                                    <td>{{ incidencia.tipo }}</td>
+                                    <td>{{ incidencia.descripcion }}</td>
+                                    <td>{{ incidencia.estado }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="empty-state">Aún no hay incidencias reportadas.</p>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

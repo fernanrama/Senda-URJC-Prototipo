@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Senda URJC - Modo Voy Contigo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .voy-layout {
+            max-width: 980px;
+            margin: 24px auto;
+            padding: 0 20px 30px;
+        }
+
+        .voy-header {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .voy-panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            transition: background-color 0.3s ease;
+        }
+
+        .status-box {
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 18px;
+            color: #ffffff;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .status-safe {
+            background: #1e8e3e;
+        }
+
+        .status-prealert {
+            background: #e67e00;
+        }
+
+        .status-alert {
+            background: #b3261e;
+        }
+
+        .countdown {
+            font-size: 1.15rem;
+            margin-bottom: 18px;
+            font-weight: 600;
+            color: #1f2a37;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn-danger {
+            background: #c92a2a;
+            color: #ffffff;
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background: #a61e1e;
+        }
+
+        .btn-ok {
+            background: #1e8e3e;
+            color: #ffffff;
+            border: none;
+            min-height: 88px;
+            font-size: 1.6rem;
+            font-weight: 800;
+            width: min(100%, 420px);
+            display: none;
+        }
+
+        .btn-ok:hover {
+            background: #166b2f;
+        }
+
+        .critical-overlay {
+            display: none;
+            margin-top: 20px;
+            border-radius: 12px;
+            padding: 24px;
+            background: #b3261e;
+            color: #ffffff;
+            font-size: 1.4rem;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .is-critical {
+            background: #7a1212;
+            color: #ffffff;
+        }
+
+        .is-critical .voy-panel,
+        .is-critical .voy-header {
+            background: #9f1d1d;
+            color: #ffffff;
+        }
+
+        .is-critical .countdown {
+            color: #ffffff;
+        }
+
+        @media (max-width: 640px) {
+            .btn-ok {
+                font-size: 1.3rem;
+                min-height: 76px;
+            }
+
+            .critical-overlay {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body class="dashboard-body" id="voyBody">
+    <main class="voy-layout">
+        <section class="voy-header">
+            <h1>Modo Voy Contigo</h1>
+            <p>Usuario: {{ user.nombre }} | Correo: {{ user.correo }}</p>
+        </section>
+
+        <section class="voy-panel">
+            <div id="statusBox" class="status-box status-safe">Estado: En Ruta Segura</div>
+            <div id="countdownBox" class="countdown">Cuenta atrás prealerta: 30s</div>
+
+            <div class="controls">
+                <button id="simulateBtn" class="btn btn-danger" type="button">Simular Parada/Desvío Inesperado</button>
+                <button id="okBtn" class="btn btn-ok" type="button">ESTOY BIEN</button>
+            </div>
+
+            <div id="criticalOverlay" class="critical-overlay">
+                ALERTA ENVIADA AL SERVICIO DE SEGURIDAD DEL CAMPUS
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const PREALERT_DURATION = 30;
+
+        const bodyEl = document.getElementById("voyBody");
+        const statusBoxEl = document.getElementById("statusBox");
+        const countdownBoxEl = document.getElementById("countdownBox");
+        const simulateBtnEl = document.getElementById("simulateBtn");
+        const okBtnEl = document.getElementById("okBtn");
+        const criticalOverlayEl = document.getElementById("criticalOverlay");
+
+        let countdown = PREALERT_DURATION;
+        let timerId = null;
+        let mode = "safe";
+
+        function render() {
+            statusBoxEl.className = "status-box";
+            bodyEl.classList.remove("is-critical");
+            criticalOverlayEl.style.display = "none";
+
+            if (mode === "safe") {
+                statusBoxEl.classList.add("status-safe");
+                statusBoxEl.textContent = "Estado: En Ruta Segura";
+                countdownBoxEl.textContent = `Cuenta atrás prealerta: ${PREALERT_DURATION}s`;
+                okBtnEl.style.display = "none";
+                simulateBtnEl.disabled = false;
+                return;
+            }
+
+            if (mode === "prealert") {
+                statusBoxEl.classList.add("status-prealert");
+                statusBoxEl.textContent = "Estado: Prealerta";
+                countdownBoxEl.textContent = `Cuenta atrás prealerta: ${countdown}s`;
+                okBtnEl.style.display = "inline-block";
+                simulateBtnEl.disabled = true;
+                return;
+            }
+
+            statusBoxEl.classList.add("status-alert");
+            statusBoxEl.textContent = "Estado: Alerta";
+            countdownBoxEl.textContent = "Cuenta atrás prealerta: 0s";
+            okBtnEl.style.display = "none";
+            simulateBtnEl.disabled = true;
+            bodyEl.classList.add("is-critical");
+            criticalOverlayEl.style.display = "block";
+        }
+
+        function resetToSafeState() {
+            if (timerId) {
+                clearInterval(timerId);
+                timerId = null;
+            }
+            countdown = PREALERT_DURATION;
+            mode = "safe";
+            render();
+        }
+
+        function triggerAlertState() {
+            if (timerId) {
+                clearInterval(timerId);
+                timerId = null;
+            }
+            mode = "alert";
+            countdown = 0;
+            render();
+        }
+
+        function startPrealert() {
+            if (mode === "prealert") {
+                return;
+            }
+
+            mode = "prealert";
+            countdown = PREALERT_DURATION;
+            render();
+
+            timerId = setInterval(() => {
+                countdown -= 1;
+                if (countdown <= 0) {
+                    triggerAlertState();
+                    return;
+                }
+                render();
+            }, 1000);
+        }
+
+        simulateBtnEl.addEventListener("click", startPrealert);
+        okBtnEl.addEventListener("click", resetToSafeState);
+
+        render();
+    </script>
+</body>
+</html>
